@@ -7,7 +7,7 @@ HOST = '127.0.0.1'
 PORT = 1234
 guess = ''
 output = 'Enter playername and connect'
-players = []
+players = ['Players connected: ']
 
 
 def app(s):
@@ -16,7 +16,6 @@ def app(s):
         while True:
             app.queueFunction(app.setLabel, "output", output)
             app.queueFunction(app.setLabel, "players", players)
-
             time.sleep(1)
 
     def btncallback(btn):
@@ -49,8 +48,8 @@ def app(s):
     app = gui('Wordgame')
     app.setSize('500x500')
     app.setBg('salmon')
+    app.addLabel('players', players)
     app.addEntry('input')
-    app.addLabel('players', 'Players connected: ')
     app.addLabel('output', '')
     app.addButton('connect', btncallback)
     app.thread(update_output)
@@ -65,7 +64,8 @@ def receiving(s):
             break
         # @@ is char used to find usernames 
         if '@@' in data:
-            
+            if data[5:len(data)] in players:
+                continue
             players.append(data[5:len(data)])
         else:
             output = data
