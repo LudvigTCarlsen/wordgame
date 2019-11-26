@@ -29,7 +29,7 @@ def app(s):
             try:
                 global output
                 s.connect((HOST, PORT))
-                playername = '###' + app.getEntry('input')
+                playername = '##' + app.getEntry('input')
                 s.sendall(playername.encode('utf-8'))
                 output = ''
 
@@ -62,23 +62,18 @@ def receiving(s):
         data = s.recv(1024).decode('utf-8')
         if not data:
             break
-        # @@ is char used to find usernames 
+        # @@ are chars used to find usernames 
         if '@@' in data:
-            if data[5:len(data)] in players:
+            if data[4:len(data)] in players:
                 continue
-            players.append(data[5:len(data)])
+            players.append(data[4:len(data)])
         else:
             output = data
         
 def main():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         Thread(target=app, args=(s,)).start()
-        while True:
-            try:
-                s.sendall(guess.encode('UTF-8'))
-            except:
-                pass
-
+        
 
 if __name__ == "__main__":
     main()
