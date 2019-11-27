@@ -2,9 +2,14 @@ import socket
 from threading import Thread
 import functions
 import sys
+
+
+
 HOST = '127.0.0.1'
 PORT = 1234
 clients = {}
+word = ''
+newgame = 1
 
 
 def messaging(conn):
@@ -12,23 +17,36 @@ def messaging(conn):
 
 def receiving(conn):
     #listens for data send through by client
+    newgame = 1
+    global word
     while True:
-        guess = conn.recv(1024).decode('utf-8')
-        if not guess:
+        data = conn.recv(256).decode('utf-8')
+        if not data:
             break
-        if '##' in guess:
-            clients[conn] = guess
-            for key in clients: 
-                for x in clients:
-                    returnvalue = '@@'+ clients[x]
-                    key.sendall(returnvalue.encode('utf-8'))
+        if '#%&' in data:
+            if newgame:
+                word = functions.gen_random_ord()
+                print(word)
+                newgame = 0
+            clients[conn] = data
+            for conn in clients:
+                for values in clients:
+                    returnvalue = clients[values]
+                    conn.sendall(returnvalue.encode('utf-8'))
             continue
-        clues = functions.hints(guess)
+
+        if functions.check_correct(data, word):
+            returnvalue = 'sss' + clients[conn].strip('#%&')
+            for conn in clients:
+                conn.sendall(returnvalue.encode('utf-8'))
+            continue
+
+        clues = functions.hints(data, word)
         returnvalue = clues.encode('utf-8')
-        for key in clients:
-            key.sendall(returnvalue)
-    del clients[key]
-    s.close()
+        for conn in clients:
+            conn.sendall(returnvalue)
+    del clients[conn]
+    conn.close()
 
 
 def main():
