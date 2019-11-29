@@ -4,81 +4,70 @@ from appJar import gui
 import time
 
 HOST = '127.0.0.1'
-PORT = 1234
+PORT = 12345
 guess = ''
 output = 'Enter playername and connect'
-players = ['Players connected: ']
+players = ['Connected:']
 
 
-def app(s):
 
-    def update_output():
-        while True:
-            app.queueFunction(app.setLabel, "output", output)
-            app.queueFunction(app.setLabel, "players", players)
-            time.sleep(1)
+def btncallback(btn):
 
-    def btncallback(btn):
+    if btn == 'submit':
+        guess = app.getEntry('input')
+        s.sendall(guess.encode('UTF-8'))
+        app.clearEntry('input')
 
-        if btn == 'submit':
-            guess = app.getEntry('input')
-            s.sendall(guess.encode('UTF-8'))
-            app.clearEntry('input')
+    if btn == 'connect':
+        global output
+        playername = '#%&' + app.getEntry('input')
+        s.sendall(playername.encode('utf-8'))
+        output = ''
+        app.addButtons(['submit', 'quit'], btncallback)
+        app.removeButton('connect')
+        app.clearEntry('input')
+        app.showLabel('players')
 
-        if btn == 'connect':
-            try:
-                global output
-                s.connect((HOST, PORT))
-                playername = '###' + app.getEntry('input')
-                s.sendall(playername.encode('utf-8'))
-                output = ''
+    if btn == 'quit':
+        s.sendall('quitting'.encode('utf-8'))
+        app.stop()
+        
+app = gui('Wordgame')
+app.setSize('400x300')
+app.setBg('salmon')
+app.addLabel('players', players)
+app.hideLabel('players')
+app.addEntry('input')
+app.setEntryMaxLength('input', 5)
+app.addLabel('output', '')
+app.addButton('connect', btncallback)
 
-            except:
-                output = 'Failed to connect to server'
-                s.close()
-
-            Thread(target=receiving, args=(s,)).start()
-            app.addButtons(['submit', 'cancel'], btncallback)
-            app.removeButton('connect')
-            app.clearEntry('input')
-
-        if btn == 'cancel':
-            pass
-    
-    app = gui('Wordgame')
-    app.setSize('500x500')
-    app.setBg('salmon')
-    app.addLabel('players', players)
-    app.addEntry('input')
-    app.addLabel('output', '')
-    app.addButton('connect', btncallback)
-    app.thread(update_output)
-    app.go()
-    
 
 def receiving(s):
     while True:
         global output
-        data = s.recv(1024).decode('utf-8')
+        global players
+        data = s.recv(256).decode('utf-8')
         if not data:
             break
-        # @@ is char used to find usernames 
-        if '@@' in data:
-            if data[5:len(data)] in players:
-                continue
-            players.append(data[5:len(data)])
+        # ## is char used to find usernames 
+        if '#%&' in data:
+            if data.strip('#%&') not in players:
+                players.append(data.strip('#%&'))
+                app.setLabel('players', players)
+        elif 'sss' in data:
+            output = f'Vinnaren är:  {data[3:len(data)]} \n ett nytt ord går att gissa på'
+            app.setLabel('output', output)
         else:
-            output = data
-        
-def main():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        Thread(target=app, args=(s,)).start()
-        while True:
-            try:
-                s.sendall(guess.encode('UTF-8'))
-            except:
-                pass
+            app.setLabel('output', data)
 
+def main():
+    global s
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((HOST,PORT))
+        Thread(target=receiving, args=(s,)).start()
+        app.go()
+        
 
 if __name__ == "__main__":
     main()
