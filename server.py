@@ -12,7 +12,6 @@ newgame = 1
 
 
 def receiving(conn):
-    #listens for data send through by client
     global newgame
     global random_word
     while True:
@@ -58,12 +57,10 @@ def main():
     s.listen()
     print('Listening...')
     while True:
-        #accepts client connections in main thread
         conn, adress = s.accept()
         print(conn)
         Thread(target=receiving, args=(conn,)).start()
-        #thread for handling guesses received
-        #thread for handling messages between clients
+        
     s.close
 
 if __name__ == "__main__":

@@ -50,7 +50,7 @@ def receiving(s):
         data = s.recv(256).decode('utf-8')
         if not data:
             break
-        # ## is char used to find usernames 
+        # #&% is char used to find usernames 
         if '#%&' in data:
             if data.strip('#%&') not in players:
                 players.append(data.strip('#%&'))
