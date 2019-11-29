@@ -1,33 +1,55 @@
 import socket
 from threading import Thread
 import functions
+
+
+
 HOST = '127.0.0.1'
-PORT = 1234
+PORT = 12345
 clients = {}
+random_word = ''
+newgame = 1
 
-
-def messaging(conn):
-    pass
 
 def receiving(conn):
     #listens for data send through by client
+    global newgame
+    global random_word
     while True:
-        guess = conn.recv(1024).decode('utf-8')
-        if not guess:
+        if newgame:
+            random_word = functions.gen_random_ord()
+            newgame = 0
+            print(random_word)
+        data = conn.recv(256).decode('utf-8')
+        if not data:
             break
-        if '##' in guess:
-            clients[conn] = guess
-            for key in clients: 
-                for x in clients:
-                    returnvalue = '@@'+ clients[x]
-                    key.sendall(returnvalue.encode('utf-8'))
+        if data == 'quitting':
+            conn.close()
+            break
+        if '#%&' in data:
+            name = str(data)
+            clients[conn] = name   
+
+            for conn in clients:
+                for names in clients:
+                    returnvalue = clients[names]
+                    conn.sendall(returnvalue.encode('utf-8'))
+                
+
+        elif functions.check_correct(data, random_word):
+            returnvalue = 'sss' + clients[conn].strip('#%&')
+            newgame = 1
+            for conn in clients:
+                conn.sendall(returnvalue.encode('utf-8'))
             continue
-        clues = functions.hints(guess)
-        returnvalue = clues.encode('utf-8')
-        for key in clients:
-            key.sendall(returnvalue)
-    del clients[key]
-    s.close()
+
+        else:
+            clues = functions.hints(data, random_word)
+            returnvalue = clues.encode('utf-8')
+            for conn in clients:
+                conn.sendall(returnvalue)
+    del clients[conn]
+    conn.close()
 
 
 def main():
@@ -39,11 +61,9 @@ def main():
         #accepts client connections in main thread
         conn, adress = s.accept()
         print(conn)
-        clients[conn] = adress
         Thread(target=receiving, args=(conn,)).start()
         #thread for handling guesses received
         #thread for handling messages between clients
-        Thread(target=messaging, args=(conn,)).start()
     s.close
 
 if __name__ == "__main__":
